@@ -65,6 +65,25 @@ main{max-width:640px;margin:0 auto;padding:14px}
   background:var(--card);border:1px solid var(--bd);border-radius:18px;
   padding:15px;margin-bottom:14px;box-shadow:0 2px 10px rgba(38,23,23,.04)
 }
+.alert-card{
+  background:var(--ac);color:#ffffff;border-radius:18px;
+  padding:15px;margin-bottom:14px;box-shadow:0 6px 20px rgba(200,16,46,.28);
+  animation:pulseAlert 1.6s infinite alternate
+}
+@keyframes pulseAlert{
+  from{transform:scale(1)}
+  to{transform:scale(1.01)}
+}
+.alert-card h2{color:#ffffff;margin:0 0 4px;font-size:18px}
+.alert-card p{margin:0 0 12px;font-size:14px;opacity:.95}
+.alert-btns{display:flex;gap:8px;flex-wrap:wrap}
+.alert-btns button{
+  flex:1;min-height:42px;padding:0 10px;font-size:13px;font-weight:700;
+  background:#ffffff;color:var(--ac);border-radius:10px
+}
+.alert-btns button.sec{
+  background:rgba(255,255,255,.18);color:#ffffff;border:1px solid rgba(255,255,255,.45)
+}
 h2{
   font-family:"Roboto",system-ui,-apple-system,"Segoe UI",sans-serif;
   font-size:19px;font-weight:700;line-height:1.2;margin:0 0 10px
@@ -94,8 +113,8 @@ button{
 }
 button.s{background:var(--inp);color:var(--tx);border:1px solid var(--bd)}
 button.w{width:100%}
-button.x{min-width:38px;min-height:38px;padding:0;background:transparent;color:var(--bad);font-size:17px}
-button.ed{min-width:38px;min-height:38px;padding:0;background:transparent;color:var(--mut);font-size:16px}
+button.x{min-width:36px;min-height:36px;padding:0;background:transparent;color:var(--bad);font-size:17px}
+button.ed{min-width:36px;min-height:36px;padding:0;background:transparent;color:var(--mut);font-size:16px}
 .bar{height:16px;background:var(--inp);border:1px solid var(--bd);border-radius:99px;overflow:hidden;margin:8px 0 4px}
 .bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .3s}
 .bar.ok i{background:var(--ok)}
@@ -105,7 +124,7 @@ button.ed{min-width:38px;min-height:38px;padding:0;background:transparent;color:
 .kpi b{font-size:17px}
 .kpi.wide{grid-column:span 2}
 .row{
-  display:flex;align-items:center;gap:10px;min-height:50px;
+  display:flex;align-items:center;gap:8px;min-height:50px;
   border-bottom:1px solid var(--bd);padding:6px 0
 }
 .row:last-child{border-bottom:0}
@@ -172,8 +191,33 @@ nav button.on{color:var(--ac);background:var(--inp);font-weight:700}
 </header>
 
 <main>
+<!-- CONTAINER DE ALERTAS ATIVOS (APARECE EM QUALQUER ABA QUANDO DÁ A HORA) -->
+<div id="activeAlertsBox"></div>
+
 <!-- ABA 0: HOJE & FOCO -->
 <section class="tab on" id="t0">
+  <div class="card">
+    <div class="card-head">
+      <h2>🔔 Lembretes com horário</h2>
+      <button class="s" id="notifBtn" style="min-height:38px;padding:0 12px;font-size:13px" onclick="requestNotifPermission()">Ativar alertas</button>
+    </div>
+    <div class="g2">
+      <label class="f" style="margin:0">Horário<input id="remTime" type="time" style="margin-top:4px"></label>
+      <label class="f" style="margin:0">Repetir<select id="remRepeat" style="margin-top:4px">
+        <option value="once">Só hoje</option>
+        <option value="weekdays">Dias úteis (Seg-Sex)</option>
+        <option value="daily">Todo dia</option>
+      </select></label>
+    </div>
+    <label class="f" style="margin-top:10px">O que lembrar?<input id="remTitle" type="text" placeholder="Ex: Tomar remédio / Aula FMU / Revisar fechamento"></label>
+    <div class="g2">
+      <button onclick="addReminder()">+ Criar lembrete</button>
+      <button class="s" onclick="testAlertSound()">🔊 Testar alerta</button>
+    </div>
+    <div id="remindersList" style="margin-top:10px"></div>
+    <div class="leg">Toque no ícone <b>📅</b> ao lado de um lembrete para baixar no Calendário do celular e garantir aviso mesmo com o app fechado.</div>
+  </div>
+
   <div class="card">
     <div class="card-head">
       <h2>☀️ Top 3 prioridades de hoje</h2>
@@ -213,7 +257,7 @@ nav button.on{color:var(--ac);background:var(--inp);font-weight:700}
     <h2>📅 Agenda da semana</h2>
     <div class="day-pills" id="dayPills"></div>
     <div class="g2">
-      <label class="f" style="margin:0">Horário / Turno<input id="agTime" type="text" placeholder="Ex: 19:00 ou Noite" style="margin-top:4px"></label>
+      <label class="f" style="margin:0">Horário (gera alerta)<input id="agTime" type="time" style="margin-top:4px"></label>
       <label class="f" style="margin:0">Categoria<select id="agCat" style="margin-top:4px">
         <option>Faculdade</option><option>Trabalho</option><option>Treino</option><option>Pessoal</option><option>Casa</option>
       </select></label>
@@ -339,12 +383,15 @@ nav button.on{color:var(--ac);background:var(--inp);font-weight:700}
 var DIAS=["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
 var DIAS_FULL=["Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado","Domingo"];
 var MESES_NOMES=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+var REPEAT_LAB={once:"Só hoje",weekdays:"Dias úteis",daily:"Todo dia"};
 
 var DEF={
   theme:"light",
   tab:0,
   sel_day:0,
   fin_month:"",
+  reminders:[],
+  alert_ack:{},
   top3:[],
   habits:[
     {id:"h1",t:"Beber 2L de água",d:false},
@@ -370,6 +417,10 @@ function todayIsoDate(){
   var d=new Date();
   return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
+function currentHHMM(){
+  var d=new Date();
+  return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+}
 function todayIndex(){
   var d=new Date().getDay();
   return d===0?6:d-1;
@@ -385,12 +436,21 @@ function formatBrDate(isoDate){
   if(p.length!==3)return isoDate||"";
   return p[2]+"/"+p[1]+"/"+p[0];
 }
+function addMinutesToHHMM(hhmm,mins){
+  var p=String(hhmm||currentHHMM()).split(":");
+  var h=parseInt(p[0],10)||0,m=parseInt(p[1],10)||0;
+  var tot=(h*60+m+mins)%(24*60);
+  if(tot<0)tot+=24*60;
+  return String(Math.floor(tot/60)).padStart(2,"0")+":"+String(tot%60).padStart(2,"0");
+}
 
 function normalizeState(obj){
   var base=JSON.parse(JSON.stringify(DEF));
   if(obj&&typeof obj==="object"){
     for(var k in obj)if(obj[k]!==undefined)base[k]=obj[k];
   }
+  if(!Array.isArray(base.reminders))base.reminders=[];
+  if(!base.alert_ack||typeof base.alert_ack!=="object")base.alert_ack={};
   if(!Array.isArray(base.top3))base.top3=[];
   if(!Array.isArray(base.habits))base.habits=[];
   if(!base.agenda||typeof base.agenda!=="object")base.agenda={0:[],1:[],2:[],3:[],4:[],5:[],6:[]};
@@ -426,6 +486,212 @@ function setTheme(t){
 }
 function toggleTheme(){setTheme(S.theme==="dark"?"light":"dark")}
 
+/* SISTEMA DE ALERTAS, NOTIFICAÇÕES E SOM */
+function playChime(){
+  try{
+    if(navigator.vibrate)navigator.vibrate([220,120,220]);
+    var Ctx=window.AudioContext||window.webkitAudioContext;
+    if(!Ctx)return;
+    var ctx=new Ctx();
+    [587.33,880].forEach(function(freq,idx){
+      var osc=ctx.createOscillator();
+      var gain=ctx.createGain();
+      osc.type="sine";
+      osc.frequency.value=freq;
+      gain.gain.setValueAtTime(0.001,ctx.currentTime+idx*0.18);
+      gain.gain.exponentialRampToValueAtTime(0.18,ctx.currentTime+idx*0.18+0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+idx*0.18+0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime+idx*0.18);
+      osc.stop(ctx.currentTime+idx*0.18+0.36);
+    });
+  }catch(e){}
+}
+function testAlertSound(){
+  playChime();
+  alert("🔔 Exemplo de alerta: assim o Assistente da Bia vai te avisar quando chegar a hora de um lembrete!");
+}
+function updateNotifBtn(){
+  var btn=$("notifBtn");if(!btn)return;
+  if(!("Notification" in window)){btn.style.display="none";return;}
+  if(Notification.permission==="granted"){
+    btn.textContent="🔔 Alertas ativos";
+    btn.style.color="var(--ok)";
+  }else if(Notification.permission==="denied"){
+    btn.textContent="🔕 Bloqueado no nav.";
+    btn.style.color="var(--bad)";
+  }else{
+    btn.textContent="🔔 Ativar alertas";
+  }
+}
+function requestNotifPermission(){
+  if(!("Notification" in window)){
+    alert("Este navegador não suporta notificações do sistema. Use o botão 📅 nos lembretes para salvar no Calendário do celular.");
+    return;
+  }
+  Notification.requestPermission().then(function(perm){
+    updateNotifBtn();
+    if(perm==="granted"){
+      playChime();
+      new Notification("Assistente da Bia",{body:"Alertas ativados com sucesso! ❤️"});
+    }else{
+      alert("Permissão não concedida. Você ainda verá alertas na tela e pode exportar para o Calendário do celular pelo botão 📅.");
+    }
+  });
+}
+function isReminderActiveToday(rem){
+  var td=todayIndex();
+  var todayStr=todayIsoDate();
+  if(rem.repeat==="daily")return true;
+  if(rem.repeat==="weekdays")return td>=0&&td<=4;
+  return !rem.date||rem.date===todayStr;
+}
+function isReminderDoneToday(rem){
+  return rem.doneDate===todayIsoDate();
+}
+function getDueItems(){
+  var nowHHMM=currentHHMM();
+  var todayStr=todayIsoDate();
+  var td=todayIndex();
+  var due=[];
+
+  S.reminders.forEach(function(rem){
+    if(!isReminderActiveToday(rem)||isReminderDoneToday(rem))return;
+    var targetTime=rem.snoozeUntil||rem.time;
+    if(targetTime&&targetTime<=nowHHMM){
+      due.push({
+        kind:"rem",
+        id:rem.id,
+        time:targetTime,
+        title:rem.title,
+        sub:REPEAT_LAB[rem.repeat]||"Lembrete",
+        notifKey:"rem_"+rem.id+"_"+todayStr+"_"+targetTime
+      });
+    }
+  });
+
+  (S.agenda[td]||[]).forEach(function(ag){
+    if(!ag.time||!/^\d{2}:\d{2}$/.test(ag.time))return;
+    var ackKey="ag_"+ag.id+"_"+todayStr;
+    if(S.alert_ack[ackKey])return;
+    if(ag.time<=nowHHMM){
+      due.push({
+        kind:"ag",
+        id:ag.id,
+        time:ag.time,
+        title:ag.title,
+        sub:"Agenda · "+ag.cat,
+        notifKey:ackKey
+      });
+    }
+  });
+
+  return due;
+}
+function checkAlerts(){
+  var box=$("activeAlertsBox");
+  if(!box)return;
+  var due=getDueItems();
+  if(!due.length){
+    box.innerHTML="";
+    return;
+  }
+  due.forEach(function(item){
+    if(!S.alert_ack["sound_"+item.notifKey]){
+      S.alert_ack["sound_"+item.notifKey]=true;
+      save();
+      playChime();
+      if("Notification" in window && Notification.permission==="granted"){
+        try{new Notification("⏰ "+item.time+" — Assistente da Bia",{body:item.title+" ("+item.sub+")"});}catch(e){}
+      }
+    }
+  });
+
+  box.innerHTML=due.map(function(item){
+    return '<div class="alert-card">'+
+      '<h2>⏰ Lembrete das '+esc(item.time)+'</h2>'+
+      '<p><b>'+esc(item.title)+'</b> · '+esc(item.sub)+'</p>'+
+      '<div class="alert-btns">'+
+        '<button type="button" onclick="completeAlert(\''+item.kind+'\',\''+item.id+'\')">✔️ Concluir</button>'+
+        '<button type="button" class="sec" onclick="snoozeAlert(\''+item.kind+'\',\''+item.id+'\',10)">+10 min</button>'+
+        '<button type="button" class="sec" onclick="snoozeAlert(\''+item.kind+'\',\''+item.id+'\',30)">+30 min</button>'+
+      '</div>'+
+    '</div>';
+  }).join("");
+}
+function completeAlert(kind,id){
+  var todayStr=todayIsoDate();
+  if(kind==="rem"){
+    var rem=S.reminders.find(function(x){return x.id===id;});
+    if(rem){
+      rem.doneDate=todayStr;
+      rem.snoozeUntil="";
+    }
+  }else if(kind==="ag"){
+    S.alert_ack["ag_"+id+"_"+todayStr]=true;
+  }
+  save();
+  checkAlerts();
+  if($("t0").classList.contains("on"))rReminders();
+}
+function snoozeAlert(kind,id,mins){
+  var nextTime=addMinutesToHHMM(currentHHMM(),mins);
+  var todayStr=todayIsoDate();
+  if(kind==="rem"){
+    var rem=S.reminders.find(function(x){return x.id===id;});
+    if(rem)rem.snoozeUntil=nextTime;
+  }else if(kind==="ag"){
+    var td=todayIndex();
+    var ag=(S.agenda[td]||[]).find(function(x){return x.id===id;});
+    if(ag){
+      delete S.alert_ack["ag_"+id+"_"+todayStr];
+      ag.time=nextTime;
+    }
+  }
+  save();
+  checkAlerts();
+  if($("t0").classList.contains("on"))rReminders();
+  if($("t1").classList.contains("on"))rAgenda();
+}
+function downloadReminderIcs(id){
+  var rem=S.reminders.find(function(x){return x.id===id;});
+  if(!rem)return;
+  var d=(rem.date||todayIsoDate()).replace(/-/g,"");
+  var t=(rem.time||"09:00").replace(":","")+"00";
+  var rrule="";
+  if(rem.repeat==="daily")rrule="RRULE:FREQ=DAILY\r\n";
+  else if(rem.repeat==="weekdays")rrule="RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR\r\n";
+  var ics=[
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Assistente da Bia//PT-BR",
+    "BEGIN:VEVENT",
+    "UID:"+rem.id+"@assistentebia",
+    "DTSTAMP:"+d+"T"+t,
+    "DTSTART:"+d+"T"+t,
+    "DTEND:"+d+"T"+t,
+    rrule.trim(),
+    "SUMMARY:"+rem.title,
+    "BEGIN:VALARM",
+    "TRIGGER:-PT5M",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:"+rem.title,
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR"
+  ].filter(Boolean).join("\r\n");
+
+  try{
+    var blob=new Blob([ics],{type:"text/calendar;charset=utf-8"});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");
+    a.href=url;a.download="lembrete-bia-"+d+".ics";
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url)},1000);
+  }catch(e){alert("Não foi possível exportar o evento neste navegador.");}
+}
+
 var NAV=[["☀️","Hoje"],["📅","Semana"],["📚","Estudos"],["💪","Treinos"],["💰","Finanças"]];
 function go(i){
   S.tab=i;save();
@@ -438,15 +704,70 @@ function go(i){
   if(i===2)rStudies();
   if(i===3)rWorkouts();
   if(i===4)rFinance();
+  checkAlerts();
   window.scrollTo(0,0);
 }
 
-/* 0. HOJE & FOCO */
+/* 0. HOJE, LEMBRETES & FOCO */
+function addReminder(){
+  var time=$("remTime").value;
+  var repeat=$("remRepeat").value;
+  var title=$("remTitle").value.trim();
+  if(!time||!title){alert("Informe o horário e o texto do lembrete.");return;}
+  S.reminders.push({
+    id:uid(),
+    time:time,
+    repeat:repeat,
+    title:title,
+    date:todayIsoDate(),
+    doneDate:"",
+    snoozeUntil:""
+  });
+  S.reminders.sort(function(a,b){return String(a.time).localeCompare(String(b.time));});
+  $("remTitle").value="";
+  save();
+  rReminders();
+  checkAlerts();
+}
+function toggleReminderDone(id,checked){
+  var rem=S.reminders.find(function(x){return x.id===id;});
+  if(!rem)return;
+  rem.doneDate=checked?todayIsoDate():"";
+  if(checked)rem.snoozeUntil="";
+  save();
+  rReminders();
+  checkAlerts();
+}
+function rReminders(){
+  updateNotifBtn();
+  var el=$("remindersList");if(!el)return;
+  var active=S.reminders.filter(isReminderActiveToday);
+  if(!active.length){
+    el.innerHTML='<div class="empty">Nenhum lembrete com horário programado para hoje.</div>';
+    return;
+  }
+  el.innerHTML=active.map(function(rem){
+    var done=isReminderDoneToday(rem);
+    var showTime=rem.snoozeUntil||rem.time;
+    return '<div class="row">'+
+      '<input type="checkbox" '+(done?"checked":"")+' onchange="toggleReminderDone(\''+rem.id+'\',this.checked)">'+
+      '<span class="tag">'+esc(showTime)+'</span>'+
+      '<span class="grow '+(done?"done":"")+'">'+esc(rem.title)+
+        '<div class="v-sub">'+esc(REPEAT_LAB[rem.repeat]||"Hoje")+(rem.snoozeUntil?' · adiado':'')+'</div>'+
+      '</span>'+
+      '<button type="button" class="ed" onclick="downloadReminderIcs(\''+rem.id+'\')" title="Salvar no Calendário do celular">📅</button>'+
+      '<button type="button" class="x" onclick="S.reminders=S.reminders.filter(function(x){return x.id!==\''+rem.id+'\';});save();rReminders();checkAlerts()">✕</button>'+
+    '</div>';
+  }).join("");
+}
+
 function newPersonalDay(){
-  if(!confirm("Desmarcar os hábitos diários e limpar as prioridades concluídas de hoje?"))return;
+  if(!confirm("Desmarcar os hábitos diários, reiniciar lembretes recorrentes e limpar prioridades concluídas de hoje?"))return;
   S.habits.forEach(function(h){h.d=false;});
   S.top3=S.top3.filter(function(x){return !x.d;});
-  save();rToday();
+  S.reminders=S.reminders.filter(function(r){return r.repeat!=="once"||!isReminderDoneToday(r);});
+  S.reminders.forEach(function(r){r.doneDate="";r.snoozeUntil="";});
+  save();rToday();checkAlerts();
 }
 function addTop3(){
   if(S.top3.length>=3){alert("Você já definiu as 3 prioridades de hoje. Conclua ou remova uma antes de adicionar outra.");return;}
@@ -467,6 +788,7 @@ function rToday(){
   var td=todayIndex();
   $("todayDayName").textContent=DIAS_FULL[td];
   $("quickInbox").value=S.inbox||"";
+  rReminders();
 
   $("top3Form").style.display=S.top3.length>=3?"none":"grid";
   $("top3List").innerHTML=S.top3.length
@@ -508,7 +830,7 @@ function addAgendaItem(){
   S.agenda[d].sort(function(a,b){return String(a.time||"99:99").localeCompare(String(b.time||"99:99"));});
   $("agTitle").value="";
   $("agTime").value="";
-  save();rAgenda();
+  save();rAgenda();checkAlerts();
 }
 function rAgenda(){
   var d=S.sel_day;
@@ -525,7 +847,7 @@ function rAgenda(){
           '<span class="tag">'+esc(item.time||"Livre")+'</span>'+
           '<span class="grow">'+esc(item.title)+'</span>'+
           '<span class="tag">'+esc(item.cat)+'</span>'+
-          '<button class="x" onclick="S.agenda['+d+'].splice('+i+',1);save();rAgenda()">✕</button>'+
+          '<button class="x" onclick="S.agenda['+d+'].splice('+i+',1);save();rAgenda();checkAlerts()">✕</button>'+
         '</div>';
       }).join("")
       :'<div class="empty">Nenhum compromisso neste dia.</div>');
@@ -795,6 +1117,9 @@ function bkImp(){
 $("todayHeader").textContent=DIAS_FULL[todayIndex()]+" · "+new Date().toLocaleDateString("pt-BR");
 setTheme(S.theme);
 go(S.tab||0);
+checkAlerts();
+setInterval(checkAlerts,15000);
+document.addEventListener("visibilitychange",function(){if(!document.hidden)checkAlerts();});
 </script>
 </body>
 </html>
