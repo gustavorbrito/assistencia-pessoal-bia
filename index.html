@@ -84,6 +84,14 @@ main{max-width:640px;margin:0 auto;padding:14px}
 .alert-btns button.sec{
   background:rgba(255,255,255,.18);color:#ffffff;border:1px solid rgba(255,255,255,.45)
 }
+.glance-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.glance-box{
+  background:var(--card);border:1px solid var(--bd);border-radius:16px;
+  padding:12px;cursor:pointer;box-shadow:0 2px 8px rgba(38,23,23,.03)
+}
+.glance-box small{display:block;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;margin-bottom:3px}
+.glance-box b{font-size:16px;display:block}
+.glance-box span{font-size:12px;color:var(--mut);display:block;margin-top:2px}
 h2{
   font-family:"Roboto",system-ui,-apple-system,"Segoe UI",sans-serif;
   font-size:19px;font-weight:700;line-height:1.2;margin:0 0 10px
@@ -99,6 +107,12 @@ h3{
   text-transform:uppercase;letter-spacing:.06em
 }
 label.f{display:block;font-size:13px;color:var(--mut);margin-bottom:10px}
+label.chk-inline{
+  display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--tx);
+  background:var(--inp);border:1px solid var(--bd);border-radius:12px;
+  padding:10px 12px;margin-bottom:10px;cursor:pointer
+}
+label.chk-inline input{width:20px;height:20px;min-height:0;margin:0;accent-color:var(--ac)}
 input,select,textarea{
   width:100%;font:inherit;color:var(--tx);background:var(--inp);
   border:1px solid var(--bd);border-radius:12px;padding:12px 13px;
@@ -107,14 +121,15 @@ input,select,textarea{
 input:focus,select:focus,textarea:focus{outline:2px solid var(--ac);outline-offset:1px}
 textarea{min-height:100px;resize:vertical}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 button{
   font:inherit;font-weight:500;border:0;border-radius:12px;min-height:48px;
   padding:0 16px;background:var(--ac);color:var(--act);cursor:pointer
 }
 button.s{background:var(--inp);color:var(--tx);border:1px solid var(--bd)}
 button.w{width:100%}
-button.x{min-width:36px;min-height:36px;padding:0;background:transparent;color:var(--bad);font-size:17px}
-button.ed{min-width:36px;min-height:36px;padding:0;background:transparent;color:var(--mut);font-size:16px}
+button.x{min-width:34px;min-height:34px;padding:0;background:transparent;color:var(--bad);font-size:16px}
+button.ed{min-width:34px;min-height:34px;padding:0;background:transparent;color:var(--mut);font-size:15px}
 .bar{height:16px;background:var(--inp);border:1px solid var(--bd);border-radius:99px;overflow:hidden;margin:8px 0 4px}
 .bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .3s}
 .bar.ok i{background:var(--ok)}
@@ -125,7 +140,7 @@ button.ed{min-width:36px;min-height:36px;padding:0;background:transparent;color:
 .kpi.wide{grid-column:span 2}
 .row{
   display:flex;align-items:center;gap:8px;min-height:50px;
-  border-bottom:1px solid var(--bd);padding:6px 0
+  border-bottom:1px solid var(--bd);padding:7px 0
 }
 .row:last-child{border-bottom:0}
 .row input[type=checkbox]{width:24px;height:24px;min-height:0;margin:0;flex:none;accent-color:var(--ac)}
@@ -146,6 +161,8 @@ button.ed{min-width:36px;min-height:36px;padding:0;background:transparent;color:
 .v-name{font-weight:700;font-size:15px}
 .v-tot{font-weight:700;font-size:15px;color:var(--ac)}
 .v-sub{font-size:12.5px;color:var(--mut);margin-top:3px}
+.cat-bar{height:6px;background:var(--card);border-radius:99px;overflow:hidden;margin-top:5px}
+.cat-bar i{display:block;height:100%;background:var(--ac)}
 .day-pills{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px}
 .day-pill{
   flex:1;min-width:44px;min-height:42px;padding:0 6px;font-size:13px;font-weight:700;
@@ -191,11 +208,14 @@ nav button.on{color:var(--ac);background:var(--inp);font-weight:700}
 </header>
 
 <main>
-<!-- CONTAINER DE ALERTAS ATIVOS (APARECE EM QUALQUER ABA QUANDO DÁ A HORA) -->
+<!-- CONTAINER DE ALERTAS ATIVOS -->
 <div id="activeAlertsBox"></div>
 
 <!-- ABA 0: HOJE & FOCO -->
 <section class="tab on" id="t0">
+  <!-- RESUMO RÁPIDO DO DIA (FINANÇAS + PROVAS) -->
+  <div class="glance-grid" id="todayGlance"></div>
+
   <div class="card">
     <div class="card-head">
       <h2>🔔 Lembretes com horário</h2>
@@ -209,13 +229,13 @@ nav button.on{color:var(--ac);background:var(--inp);font-weight:700}
         <option value="daily">Todo dia</option>
       </select></label>
     </div>
-    <label class="f" style="margin-top:10px">O que lembrar?<input id="remTitle" type="text" placeholder="Ex: Tomar remédio / Aula FMU / Revisar fechamento"></label>
+    <label class="f" style="margin-top:10px">O que lembrar?<input id="remTitle" type="text" placeholder="Ex: Tomar remédio / Aula FMU / Pagar fatura"></label>
     <div class="g2">
       <button onclick="addReminder()">+ Criar lembrete</button>
       <button class="s" onclick="testAlertSound()">🔊 Testar alerta</button>
     </div>
     <div id="remindersList" style="margin-top:10px"></div>
-    <div class="leg">Toque no ícone <b>📅</b> ao lado de um lembrete para baixar no Calendário do celular e garantir aviso mesmo com o app fechado.</div>
+    <div class="leg">Toque em <b>📅</b> para salvar no Calendário do celular e garantir aviso mesmo com o app fechado.</div>
   </div>
 
   <div class="card">
@@ -324,43 +344,110 @@ nav button.on{color:var(--ac);background:var(--inp);font-weight:700}
   </div>
 </section>
 
-<!-- ABA 4: FINANÇAS PESSOAIS -->
+<!-- ABA 4: FINANÇAS PESSOAIS COMPLETAS -->
 <section class="tab" id="t4">
+  <!-- PAINEL GERAL DO MÊS -->
   <div class="card">
     <div class="card-head">
-      <h2>💰 Controle financeiro</h2>
+      <h2>💰 Resumo financeiro</h2>
       <input type="month" id="finMonthPicker" class="month-pick" onchange="onSelectFinMonth(this.value)" aria-label="Selecionar mês financeiro">
-    </div>
-    <div class="g2">
-      <label class="f">Entradas / Renda do mês (R$)<input id="finIncome" type="number" inputmode="decimal" step="any" placeholder="Ex: 3500" oninput="updateFinIncome()"></label>
-      <label class="f">Meta de guardar no mês (R$)<input id="finSaveGoal" type="number" inputmode="decimal" step="any" placeholder="Ex: 600" oninput="updateFinIncome()"></label>
     </div>
     <div class="bar" id="finBar"><i id="finBarFill"></i></div>
     <div id="finPct" style="font-weight:700"></div>
     <div class="kpis" id="finKpis"></div>
+    <label class="f" style="margin-top:12px;margin-bottom:0">Meta de economizar no mês (R$)<input id="finSaveGoal" type="number" inputmode="decimal" step="any" placeholder="Ex: 600" oninput="updateFinSaveGoal()"></label>
   </div>
 
+  <!-- ENTRADAS / RECEITAS DO MÊS -->
   <div class="card">
-    <h2>🧾 Lançar gasto</h2>
+    <h2>💵 Entradas do mês (Salário, Comissão, Extras)</h2>
     <div class="g2">
-      <label class="f" style="margin:0">Descrição<input id="expDesc" type="text" placeholder="Ex: Faculdade / Mercado / Lazer" style="margin-top:4px"></label>
+      <label class="f" style="margin:0">Descrição<input id="incDesc" type="text" placeholder="Ex: Salário / Comissão loja" style="margin-top:4px"></label>
+      <label class="f" style="margin:0">Valor (R$)<input id="incVal" type="number" inputmode="decimal" step="any" placeholder="0,00" style="margin-top:4px"></label>
+    </div>
+    <button class="w" style="margin-top:10px" onclick="addIncomeItem()">+ Adicionar entrada</button>
+    <div id="incomesList" style="margin-top:8px"></div>
+  </div>
+
+  <!-- LANÇAMENTO RÁPIDO DE GASTOS (FIXOS, PARCELADOS E AVULSOS) -->
+  <div class="card">
+    <div class="card-head">
+      <h2>🧾 Registrar gasto</h2>
+      <button class="s" style="min-height:36px;padding:0 10px;font-size:12.5px" onclick="copyRecurringFromPrevMonth()">📌 Copiar fixas mês ant.</button>
+    </div>
+    <div class="g2">
+      <label class="f" style="margin:0">O que comprou / pagou?<input id="expDesc" type="text" placeholder="Ex: Faculdade FMU / Mercado" style="margin-top:4px"></label>
       <label class="f" style="margin:0">Valor (R$)<input id="expVal" type="number" inputmode="decimal" step="any" placeholder="0,00" style="margin-top:4px"></label>
     </div>
     <div class="g2" style="margin-top:10px">
       <label class="f" style="margin:0">Categoria<select id="expCat" style="margin-top:4px">
-        <option>Faculdade</option><option>Contas Fixas</option><option>Alimentação</option><option>Transporte</option><option>Beleza & Cuidados</option><option>Lazer & Saídas</option><option>Cartão / Outros</option>
+        <option>Faculdade</option>
+        <option>Contas Fixas</option>
+        <option>Alimentação</option>
+        <option>Transporte</option>
+        <option>Beleza & Cuidados</option>
+        <option>Roupas & Compras</option>
+        <option>Lazer & Saídas</option>
+        <option>Saúde & Farmácia</option>
+        <option>Outros</option>
       </select></label>
-      <label class="f" style="margin:0">Data<input id="expDate" type="date" style="margin-top:4px"></label>
+      <label class="f" style="margin:0">Pagamento<select id="expPay" style="margin-top:4px">
+        <option>Pix / Débito</option>
+        <option>Cartão de Crédito</option>
+        <option>Dinheiro</option>
+        <option>Vale / Benefício</option>
+      </select></label>
     </div>
-    <button class="w" style="margin-top:10px" onclick="addExpense()">+ Registrar gasto</button>
-    <div id="catSummary" style="margin-top:10px"></div>
-    <div id="expensesList" style="margin-top:10px"></div>
+    <div class="g2" style="margin-top:10px">
+      <label class="f" style="margin:0">Data<input id="expDate" type="date" style="margin-top:4px"></label>
+      <label class="f" style="margin:0">Parcelas (no crédito)<select id="expInst" style="margin-top:4px">
+        <option value="1">À vista (1x)</option>
+        <option value="2">2x parcelas</option>
+        <option value="3">3x parcelas</option>
+        <option value="4">4x parcelas</option>
+        <option value="5">5x parcelas</option>
+        <option value="6">6x parcelas</option>
+        <option value="8">8x parcelas</option>
+        <option value="10">10x parcelas</option>
+        <option value="12">12x parcelas</option>
+      </select></label>
+    </div>
+    <div class="g2" style="margin-top:10px">
+      <label class="chk-inline" style="margin:0"><input type="checkbox" id="expFixed"> Conta fixa mensal</label>
+      <label class="chk-inline" style="margin:0"><input type="checkbox" id="expPaid" checked> Já está pago</label>
+    </div>
+    <button class="w" style="margin-top:10px" onclick="addExpense()">+ Salvar gasto</button>
+    <div class="leg">Se escolher 2x ou mais, o app lança automaticamente as parcelas nos próximos meses.</div>
   </div>
 
+  <!-- ANÁLISE POR CATEGORIA E PAGAMENTO -->
+  <div class="card">
+    <h2>📊 Onde o dinheiro foi no mês</h2>
+    <div id="catSummary"></div>
+    <div id="paySummary"></div>
+  </div>
+
+  <!-- EXTRATO DO MÊS COM FILTRO -->
+  <div class="card">
+    <div class="card-head">
+      <h2>📋 Extrato de <span id="extMonthTitle"></span></h2>
+      <select id="expFilter" class="month-pick" onchange="rFinance()" aria-label="Filtrar extrato">
+        <option value="ALL">Todos</option>
+        <option value="PENDING">⏳ A pagar</option>
+        <option value="PAID">✔️ Pagos</option>
+        <option value="FIXED">📌 Fixos</option>
+        <option value="CREDIT">💳 Crédito</option>
+      </select>
+    </div>
+    <div class="leg" style="margin-top:0">Toque no checkbox para marcar como pago, em <b>✏️</b> para editar ou em <b>✕</b> para excluir.</div>
+    <div id="expensesList" style="margin-top:6px"></div>
+  </div>
+
+  <!-- CAIXINHAS / OBJETIVOS -->
   <div class="card">
     <h2>🎯 Caixinhas & Objetivos</h2>
     <div class="g2">
-      <label class="f" style="margin:0">Objetivo<input id="boxName" type="text" placeholder="Ex: Reserva / Viagem" style="margin-top:4px"></label>
+      <label class="f" style="margin:0">Objetivo<input id="boxName" type="text" placeholder="Ex: Reserva / Viagem / Celular" style="margin-top:4px"></label>
       <label class="f" style="margin:0">Meta (R$)<input id="boxTarget" type="number" inputmode="decimal" step="any" placeholder="Ex: 3000" style="margin-top:4px"></label>
     </div>
     <button class="w" style="margin-top:10px" onclick="addSavingsBox()">+ Criar caixinha</button>
@@ -425,6 +512,12 @@ function todayIndex(){
   var d=new Date().getDay();
   return d===0?6:d-1;
 }
+function addMonthsToIso(isoMonth,offset){
+  var p=String(isoMonth||currentIsoMonth()).split("-");
+  var y=parseInt(p[0],10),m=parseInt(p[1],10)-1+offset;
+  var d=new Date(y,m,1);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+}
 function formatIsoMonthLabel(iso){
   var p=String(iso||"").split("-");
   if(p.length!==2)return iso||"";
@@ -461,6 +554,23 @@ function normalizeState(obj){
   if(!base.fin_months||typeof base.fin_months!=="object")base.fin_months={};
   if(!Array.isArray(base.boxes))base.boxes=[];
   if(!base.fin_month)base.fin_month=currentIsoMonth();
+
+  Object.keys(base.fin_months).forEach(function(mk){
+    var rec=base.fin_months[mk];
+    if(!rec||typeof rec!=="object")rec={incomes:[],saveGoal:"",expenses:[]};
+    if(!Array.isArray(rec.incomes)){
+      rec.incomes=[];
+      if(n(rec.income)>0)rec.incomes.push({id:uid(),desc:"Renda mensal",val:n(rec.income)});
+    }
+    if(!Array.isArray(rec.expenses))rec.expenses=[];
+    rec.expenses.forEach(function(e){
+      if(e.paid===undefined)e.paid=true;
+      if(e.fixed===undefined)e.fixed=false;
+      if(!e.pay)e.pay="Pix / Débito";
+    });
+    base.fin_months[mk]=rec;
+  });
+
   return base;
 }
 
@@ -784,10 +894,37 @@ function addHabit(){
   inp.value="";
   save();rToday();
 }
+function rTodayGlance(){
+  var box=$("todayGlance");if(!box)return;
+  var curIso=currentIsoMonth();
+  var fin=calcMonthFinances(curIso);
+  var upcomingExams=S.exams.filter(function(ex){
+    if(ex.status==="Concluído"||!ex.date)return false;
+    var diff=daysUntil(ex.date);
+    return diff!==null&&diff>=0&&diff<=7;
+  });
+  var nextEx=upcomingExams[0];
+  var exSub=nextEx
+    ?esc(nextEx.subj)+" ("+(daysUntil(nextEx.date)===0?"hoje!":"em "+daysUntil(nextEx.date)+"d")+")"
+    :"Nenhuma prova nos próx. 7d";
+
+  box.innerHTML=
+    '<div class="glance-box" onclick="go(4)">'+
+      '<small>💰 Saldo livre ('+formatIsoMonthLabel(curIso)+')</small>'+
+      '<b style="color:'+(fin.freeBalance>=0?"var(--ok)":"var(--bad)")+'">'+R(fin.freeBalance)+'</b>'+
+      '<span>A pagar: '+R(fin.pending)+'</span>'+
+    '</div>'+
+    '<div class="glance-box" onclick="go(2)">'+
+      '<small>🎓 Próxima prova/entrega</small>'+
+      '<b>'+(nextEx?esc(nextEx.title):"Tudo em dia")+'</b>'+
+      '<span>'+exSub+'</span>'+
+    '</div>';
+}
 function rToday(){
   var td=todayIndex();
   $("todayDayName").textContent=DIAS_FULL[td];
   $("quickInbox").value=S.inbox||"";
+  rTodayGlance();
   rReminders();
 
   $("top3Form").style.display=S.top3.length>=3?"none":"grid";
@@ -969,16 +1106,30 @@ function rWorkouts(){
     :'<div class="empty">Cadastre sua divisão de treinos acima (ex: Treino A, Treino B, Cardio).</div>';
 }
 
-/* 4. FINANÇAS PESSOAIS */
+/* 4. FINANÇAS PESSOAIS COMPLETAS */
 function ensureFinMonth(iso){
   var key=iso||S.fin_month||currentIsoMonth();
   if(!S.fin_months[key]||typeof S.fin_months[key]!=="object"){
-    S.fin_months[key]={income:"",saveGoal:"",expenses:[]};
+    S.fin_months[key]={incomes:[],saveGoal:"",expenses:[]};
   }
-  if(!Array.isArray(S.fin_months[key].expenses)){
-    S.fin_months[key].expenses=[];
-  }
+  if(!Array.isArray(S.fin_months[key].incomes))S.fin_months[key].incomes=[];
+  if(!Array.isArray(S.fin_months[key].expenses))S.fin_months[key].expenses=[];
   return S.fin_months[key];
+}
+function calcMonthFinances(iso){
+  var rec=ensureFinMonth(iso);
+  var income=rec.incomes.reduce(function(acc,x){return acc+n(x.val);},0);
+  var saveGoal=n(rec.saveGoal);
+  var totalSpent=rec.expenses.reduce(function(acc,e){return acc+n(e.val);},0);
+  var paid=rec.expenses.filter(function(e){return e.paid;}).reduce(function(acc,e){return acc+n(e.val);},0);
+  var pending=rec.expenses.filter(function(e){return !e.paid;}).reduce(function(acc,e){return acc+n(e.val);},0);
+  var fixed=rec.expenses.filter(function(e){return e.fixed;}).reduce(function(acc,e){return acc+n(e.val);},0);
+  var freeBalance=income-totalSpent;
+  return{
+    rec:rec,income:income,saveGoal:saveGoal,totalSpent:totalSpent,
+    paid:paid,pending:pending,fixed:fixed,freeBalance:freeBalance,
+    afterSaveGoal:freeBalance-saveGoal
+  };
 }
 function onSelectFinMonth(iso){
   if(!iso)return;
@@ -986,25 +1137,112 @@ function onSelectFinMonth(iso){
   ensureFinMonth(iso);
   save();rFinance();
 }
-function updateFinIncome(){
+function updateFinSaveGoal(){
   var iso=S.fin_month||currentIsoMonth();
   var rec=ensureFinMonth(iso);
-  rec.income=$("finIncome").value;
   rec.saveGoal=$("finSaveGoal").value;
+  save();rFinance();
+}
+function addIncomeItem(){
+  var desc=$("incDesc").value.trim();
+  var val=n($("incVal").value);
+  if(!desc||val<=0){alert("Informe a descrição da entrada e um valor maior que zero.");return;}
+  var iso=S.fin_month||currentIsoMonth();
+  var rec=ensureFinMonth(iso);
+  rec.incomes.unshift({id:uid(),desc:desc,val:val});
+  $("incDesc").value="";
+  $("incVal").value="";
+  save();rFinance();
+}
+function editIncomeItem(iso,id){
+  var rec=ensureFinMonth(iso);
+  var item=rec.incomes.find(function(x){return x.id===id;});
+  if(!item)return;
+  var newDesc=prompt("Descrição da entrada:",item.desc);
+  if(newDesc===null)return;
+  var newValStr=prompt("Valor (R$):",String(item.val).replace(".",","));
+  if(newValStr===null)return;
+  var newVal=n(newValStr);
+  if(newVal<=0){alert("Valor inválido.");return;}
+  item.desc=newDesc.trim()||item.desc;
+  item.val=newVal;
   save();rFinance();
 }
 function addExpense(){
   var desc=$("expDesc").value.trim();
   var val=n($("expVal").value);
-  if(!desc||val<=0){alert("Informe a descrição e um valor maior que zero.");return;}
+  if(!desc||val<=0){alert("Informe o nome do gasto e um valor maior que zero.");return;}
   var cat=$("expCat").value;
+  var pay=$("expPay").value;
   var dt=$("expDate").value||todayIsoDate();
-  var targetMonth=dt.slice(0,7)||S.fin_month||currentIsoMonth();
-  var rec=ensureFinMonth(targetMonth);
-  rec.expenses.unshift({id:uid(),desc:desc,val:val,cat:cat,date:dt});
-  S.fin_month=targetMonth;
+  var inst=Math.max(1,parseInt($("expInst").value,10)||1);
+  var fixed=$("expFixed").checked;
+  var paid=$("expPaid").checked;
+  var baseMonth=dt.slice(0,7)||S.fin_month||currentIsoMonth();
+
+  for(var idx=0;idx<inst;idx++){
+    var targetMonth=addMonthsToIso(baseMonth,idx);
+    var rec=ensureFinMonth(targetMonth);
+    var itemDesc=inst>1?(desc+" ("+(idx+1)+"/"+inst+")"):desc;
+    var itemDate=idx===0?dt:(targetMonth+"-"+dt.slice(8,10));
+    rec.expenses.unshift({
+      id:uid(),
+      desc:itemDesc,
+      val:val,
+      cat:cat,
+      pay:pay,
+      date:itemDate,
+      fixed:inst===1?fixed:false,
+      paid:idx===0?paid:false
+    });
+  }
+
+  S.fin_month=baseMonth;
   $("expDesc").value="";
   $("expVal").value="";
+  $("expInst").value="1";
+  $("expFixed").checked=false;
+  $("expPaid").checked=true;
+  save();rFinance();
+}
+function editExpenseItem(iso,id){
+  var rec=ensureFinMonth(iso);
+  var item=rec.expenses.find(function(x){return x.id===id;});
+  if(!item)return;
+  var newDesc=prompt("Descrição do gasto:",item.desc);
+  if(newDesc===null)return;
+  var newValStr=prompt("Valor (R$):",String(item.val).replace(".",","));
+  if(newValStr===null)return;
+  var newVal=n(newValStr);
+  if(newVal<=0){alert("Valor inválido.");return;}
+  item.desc=newDesc.trim()||item.desc;
+  item.val=newVal;
+  save();rFinance();
+}
+function copyRecurringFromPrevMonth(){
+  var curIso=S.fin_month||currentIsoMonth();
+  var prevIso=addMonthsToIso(curIso,-1);
+  var prevRec=ensureFinMonth(prevIso);
+  var fixedItems=prevRec.expenses.filter(function(e){return e.fixed;});
+  if(!fixedItems.length){
+    alert("Nenhuma conta fixa encontrada em "+formatIsoMonthLabel(prevIso)+". Marque 'Conta fixa mensal' ao lançar uma conta recorrente.");
+    return;
+  }
+  if(!confirm("Copiar "+fixedItems.length+" conta(s) fixa(s) de "+formatIsoMonthLabel(prevIso)+" para "+formatIsoMonthLabel(curIso)+" como pendentes?"))return;
+  var curRec=ensureFinMonth(curIso);
+  fixedItems.forEach(function(e){
+    var dayPart=(e.date&&e.date.length===10)?e.date.slice(8,10):"05";
+    curRec.expenses.unshift({
+      id:uid(),
+      desc:e.desc,
+      val:n(e.val),
+      cat:e.cat,
+      pay:e.pay||"Pix / Débito",
+      date:curIso+"-"+dayPart,
+      fixed:true,
+      paid:false
+    });
+  });
   save();rFinance();
 }
 function addSavingsBox(){
@@ -1028,50 +1266,102 @@ function depositBox(id){
 function rFinance(){
   var iso=S.fin_month||currentIsoMonth();
   S.fin_month=iso;
-  var rec=ensureFinMonth(iso);
+  var fin=calcMonthFinances(iso);
+  var rec=fin.rec;
+
   $("finMonthPicker").value=iso;
-  $("finIncome").value=rec.income||"";
   $("finSaveGoal").value=rec.saveGoal||"";
+  $("extMonthTitle").textContent=formatIsoMonthLabel(iso);
   if(!$("expDate").value)$("expDate").value=todayIsoDate();
 
-  var income=n(rec.income);
-  var saveGoal=n(rec.saveGoal);
-  var spent=rec.expenses.reduce(function(acc,e){return acc+n(e.val);},0);
-  var freeBalance=income-spent;
-  var budgetLimit=Math.max(0,income-saveGoal);
-  var pct=budgetLimit>0?Math.min(100,spent/budgetLimit*100):(income>0?Math.min(100,spent/income*100):0);
+  var budgetLimit=Math.max(0,fin.income-fin.saveGoal);
+  var pct=budgetLimit>0
+    ?Math.min(100,fin.totalSpent/budgetLimit*100)
+    :(fin.income>0?Math.min(100,fin.totalSpent/fin.income*100):0);
 
   $("finBarFill").style.width=pct+"%";
-  $("finBar").classList.toggle("ok",income>0&&freeBalance>=saveGoal);
-  $("finPct").textContent=income>0
+  $("finBar").classList.toggle("ok",fin.income>0&&fin.freeBalance>=fin.saveGoal);
+  $("finPct").textContent=fin.income>0
     ?"Comprometido: "+pct.toFixed(0)+"% do limite disponível ("+formatIsoMonthLabel(iso)+")"
-    :"Informe sua renda do mês ("+formatIsoMonthLabel(iso)+") para acompanhar o saldo";
+    :"Adicione suas entradas do mês ("+formatIsoMonthLabel(iso)+") abaixo";
 
-  var k=function(l,v,w){return '<div class="kpi'+(w?" wide":"")+'"><small>'+l+'</small><b>'+v+'</b></div>';};
+  var k=function(l,v,w,col){
+    return '<div class="kpi'+(w?" wide":"")+'"><small>'+l+'</small><b'+(col?' style="color:var(--'+col+')"':'')+'>'+v+'</b></div>';
+  };
   $("finKpis").innerHTML=
-    k("Saldo livre no mês",R(freeBalance),1)+
-    k("Total gasto",R(spent))+
-    k("Livre após meta guardar",R(freeBalance-saveGoal));
+    k("Saldo livre no mês",R(fin.freeBalance),1,fin.freeBalance>=0?"ok":"bad")+
+    k("Total de entradas",R(fin.income))+
+    k("Total de gastos",R(fin.totalSpent))+
+    k("Já pago",R(fin.paid),0,"ok")+
+    k("⏳ Falta pagar",R(fin.pending),0,fin.pending>0?"warn":"")+
+    k("Contas fixas no mês",R(fin.fixed))+
+    k("Livre após meta guardar",R(fin.afterSaveGoal),0,fin.afterSaveGoal>=0?"ok":"bad");
 
+  $("incomesList").innerHTML=rec.incomes.length
+    ?rec.incomes.map(function(inc,i){
+      return '<div class="row">'+
+        '<span class="grow"><b>'+esc(inc.desc)+'</b></span>'+
+        '<b style="color:var(--ok)">'+R(n(inc.val))+'</b>'+
+        '<button type="button" class="ed" onclick="editIncomeItem(\''+iso+'\',\''+inc.id+'\')" title="Editar">✏️</button>'+
+        '<button type="button" class="x" onclick="S.fin_months[\''+iso+'\'].incomes.splice('+i+',1);save();rFinance()" title="Remover">✕</button>'+
+      '</div>';
+    }).join("")
+    :'<div class="empty">Nenhuma entrada lançada em '+formatIsoMonthLabel(iso)+'.</div>';
+
+  /* CATEGORIAS COM BARRA VISUAL */
   var cats={};
   rec.expenses.forEach(function(e){cats[e.cat]=(cats[e.cat]||0)+n(e.val);});
   var catKeys=Object.keys(cats).sort(function(a,b){return cats[b]-cats[a];});
   $("catSummary").innerHTML=catKeys.length
-    ?'<h3>Gastos por categoria</h3>'+catKeys.map(function(c){
-      return '<div class="row"><span class="grow">'+esc(c)+'</span><b>'+R(cats[c])+'</b></div>';
+    ?'<h3>Por categoria</h3>'+catKeys.map(function(c){
+      var share=fin.totalSpent>0?(cats[c]/fin.totalSpent*100):0;
+      return '<div style="margin-bottom:8px">'+
+        '<div class="v-top"><span style="font-size:14px">'+esc(c)+' <small class="tag">'+share.toFixed(0)+'%</small></span><b>'+R(cats[c])+'</b></div>'+
+        '<div class="cat-bar"><i style="width:'+share+'%"></i></div>'+
+      '</div>';
+    }).join("")
+    :'<div class="empty">Registre seus gastos acima para ver o gráfico por categoria.</div>';
+
+  /* FORMA DE PAGAMENTO */
+  var pays={};
+  rec.expenses.forEach(function(e){var p=e.pay||"Pix / Débito";pays[p]=(pays[p]||0)+n(e.val);});
+  var payKeys=Object.keys(pays).sort(function(a,b){return pays[b]-pays[a];});
+  $("paySummary").innerHTML=payKeys.length
+    ?'<h3>Por forma de pagamento</h3>'+payKeys.map(function(p){
+      return '<div class="row" style="min-height:38px;padding:4px 0"><span class="grow">'+esc(p)+'</span><b>'+R(pays[p])+'</b></div>';
     }).join("")
     :"";
 
-  $("expensesList").innerHTML=rec.expenses.length
-    ?'<h3>Lançamentos de '+formatIsoMonthLabel(iso)+' ('+rec.expenses.length+')</h3>'+rec.expenses.map(function(e,i){
+  /* EXTRATO FILTRADO */
+  var flt=($("expFilter")&&$("expFilter").value)||"ALL";
+  var indexed=rec.expenses.map(function(e,idx){return{e:e,idx:idx};}).filter(function(item){
+    if(flt==="PENDING")return !item.e.paid;
+    if(flt==="PAID")return !!item.e.paid;
+    if(flt==="FIXED")return !!item.e.fixed;
+    if(flt==="CREDIT")return item.e.pay==="Cartão de Crédito";
+    return true;
+  });
+
+  $("expensesList").innerHTML=indexed.length
+    ?indexed.map(function(item){
+      var e=item.e,idx=item.idx;
+      var badges='<span class="tag">'+esc(e.cat)+'</span> <span class="tag">'+esc(e.pay||"Pix")+'</span>';
+      if(e.fixed)badges+=' <span class="tag warn">📌 Fixa</span>';
+      if(!e.paid)badges+=' <span class="tag bad">⏳ A pagar</span>';
       return '<div class="row">'+
-        '<div class="grow"><b>'+esc(e.desc)+'</b><div class="v-sub">'+esc(e.cat)+(e.date?' · '+formatBrDate(e.date):'')+'</div></div>'+
-        '<b>'+R(n(e.val))+'</b>'+
-        '<button class="x" onclick="S.fin_months[\''+iso+'\'].expenses.splice('+i+',1);save();rFinance()">✕</button>'+
+        '<input type="checkbox" '+(e.paid?"checked":"")+' onchange="S.fin_months[\''+iso+'\'].expenses['+idx+'].paid=this.checked;save();rFinance()" title="Marcar pago/pendente">'+
+        '<div class="grow">'+
+          '<b class="'+(e.paid?"":"")+'">'+esc(e.desc)+'</b>'+
+          '<div class="v-sub" style="margin-top:3px">'+badges+(e.date?' · '+formatBrDate(e.date):'')+'</div>'+
+        '</div>'+
+        '<b style="color:'+(e.paid?"var(--tx)":"var(--warn)")+'">'+R(n(e.val))+'</b>'+
+        '<button type="button" class="ed" onclick="editExpenseItem(\''+iso+'\',\''+e.id+'\')" title="Editar">✏️</button>'+
+        '<button type="button" class="x" onclick="S.fin_months[\''+iso+'\'].expenses.splice('+idx+',1);save();rFinance()" title="Excluir">✕</button>'+
       '</div>';
     }).join("")
-    :'<div class="empty">Nenhum gasto registrado em '+formatIsoMonthLabel(iso)+'.</div>';
+    :'<div class="empty">Nenhum lançamento encontrado neste filtro.</div>';
 
+  /* CAIXINHAS */
   $("boxesList").innerHTML=S.boxes.length
     ?S.boxes.map(function(b,i){
       var p=b.target>0?Math.min(100,b.saved/b.target*100):0;
